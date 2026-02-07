@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Menu, X, Home, MessageSquareWarning, LogOut } from 'lucide-react';
+import { Menu, X, Home, MessageSquareWarning, LogOut, BookOpen, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navigation() {
@@ -15,10 +15,15 @@ export default function Navigation() {
     setIsOpen(false);
   };
 
-  const baseItems = [
-    { path: '/', label: 'Home', icon: Home },
-    { path: '/complaints', label: 'Complaints', icon: MessageSquareWarning },
-  ];
+  const baseItems = isAdmin
+    ? [
+        { path: '/admin/dashboard', label: 'Reservations', icon: BookOpen },
+        { path: '/admin/complaints', label: 'Complaints', icon: AlertCircle },
+      ]
+    : [
+        { path: '/', label: 'Home', icon: Home },
+        { path: '/complaints', label: 'Complaints', icon: MessageSquareWarning },
+      ];
 
   return (
     <nav className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">

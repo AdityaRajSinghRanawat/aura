@@ -4,6 +4,7 @@ import Navigation from './components/Navigation';
 import HomePage from './pages/HomePage';
 import ComplaintsPage from './pages/ComplaintsPage';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminComplaintsPage from './pages/AdminComplaintsPage';
 import UserDashboard from './pages/UserDashboard';
 import SignIn from './pages/SignIn';
 import Register from './pages/Register';
@@ -53,6 +54,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<UserDashboard />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/complaints" element={<AdminComplaintsPage />} />
         </Routes>
       </Router>
     </AuthProvider>

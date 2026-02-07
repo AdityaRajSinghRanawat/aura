@@ -1,20 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle, Clock, Send, Sparkles, Home, FileText, AlertTriangle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { analyzeComplaint } from '../lib/llm';
 
 export default function ComplaintsPage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
   const [complaints, setComplaints] = useState(() => {
-    const saved = localStorage.getItem('complaints');
-    return saved ? JSON.parse(saved) : [];
+    const saved = localStorage.getItem('admin-complaints');
+    if (saved) {
+      const allComplaints = JSON.parse(saved);
+      // Filter complaints by current user
+      return user ? allComplaints.filter(c => c.userEmail === user.email) : [];
+    }
+    return [];
   });
 
   const [formData, setFormData] = useState({
     propertyId: '',
-    title: '',
+    subject: '',
     description: '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    // Re-filter complaints when user changes
+    const saved = localStorage.getItem('admin-complaints');
+    if (saved && user) {
+      const allComplaints = JSON.parse(saved);
+      const userComplaints = allComplaints.filter(c => c.userEmail === user.email);
+      setComplaints(userComplaints);
+    }
+  }, [user]);
 
   // Mock properties (In a real app, fetch from user's reserved/owned properties)
   const myProperties = [
@@ -24,28 +44,46 @@ export default function ComplaintsPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!user) {
+      alert('Please sign in to submit a complaint');
+      navigate('/signin');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       // 1. Analyze with "LLM"
-      const analysis = await analyzeComplaint(formData.description, myProperties.find(p => p.id == formData.propertyId)?.name);
+      const analysis = await analyzeComplaint(
+        formData.description, 
+        myProperties.find(p => p.id == formData.propertyId)?.name
+      );
 
       // 2. Create Complaint Object
       const complaint = {
         id: Date.now(),
-        ...formData,
+        complaintId: `CMP-${Date.now()}`,
+        userEmail: user.email,
+        subject: formData.subject,
+        description: formData.description,
+        propertyId: formData.propertyId,
         propertyName: myProperties.find(p => p.id == formData.propertyId)?.name,
-        date: new Date().toLocaleDateString(),
-        status: 'open',
-        aiAnalysis: analysis // Store the AI result
+        aiSummary: analysis?.summary || 'Complaint received and noted.',
+        status: 'under work',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
-      // 3. Save
-      const updated = [complaint, ...complaints];
-      setComplaints(updated);
-      localStorage.setItem('complaints', JSON.stringify(updated));
+      // 3. Save to admin-complaints (shared database)
+      const allComplaints = JSON.parse(localStorage.getItem('admin-complaints') || '[]');
+      const updated = [complaint, ...allComplaints];
+      localStorage.setItem('admin-complaints', JSON.stringify(updated));
+
+      // Update local state with user's complaints
+      setComplaints([complaint, ...complaints]);
       
-      setFormData({ propertyId: '', title: '', description: '' });
+      setFormData({ propertyId: '', subject: '', description: '' });
       alert('✓ Complaint filed successfully! Our AI agent has analyzed it.');
     } catch (error) {
       console.error(error);
@@ -105,8 +143,8 @@ export default function ComplaintsPage() {
                 <label className="block text-sm font-semibold text-slate-300">Subject</label>
                 <input
                   type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  value={formData.subject}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                   placeholder="e.g., Leaking Tap, No Power"
                   className="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-600 transition-shadow"
                   required
@@ -166,18 +204,25 @@ export default function ComplaintsPage() {
                   <div key={complaint.id} className="bg-slate-900 rounded-2xl border border-slate-800 p-6 hover:border-slate-700 transition-colors">
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h3 className="font-bold text-lg text-white mb-1">{complaint.title}</h3>
-                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <h3 className="font-bold text-lg text-white mb-1">{complaint.subject}</h3>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                           <span className="flex items-center gap-1"><Home size={12}/> {complaint.propertyName}</span>
                           <span>•</span>
-                          <span>{complaint.date}</span>
+                          <span>{complaint.complaintId}</span>
+                          <span>•</span>
+                          <span>{new Date(complaint.createdAt).toLocaleDateString()}</span>
                         </div>
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 ${
-                        complaint.status === 'resolved' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap ${
+                        complaint.status === 'solved' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 
+                        complaint.status === 'rejected' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                        'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                       }`}>
-                        {complaint.status === 'resolved' ? <CheckCircle size={12} /> : <Clock size={12} />}
-                        {complaint.status.charAt(0).toUpperCase() + complaint.status.slice(1)}
+                        {complaint.status === 'solved' ? <CheckCircle size={12} /> : 
+                         complaint.status === 'rejected' ? <AlertTriangle size={12} /> :
+                         <Clock size={12} />}
+                        {complaint.status === 'under work' ? 'Under Work' : 
+                         complaint.status.charAt(0).toUpperCase() + complaint.status.slice(1)}
                       </span>
                     </div>
                     
@@ -185,19 +230,14 @@ export default function ComplaintsPage() {
                       <p className="text-sm text-slate-300 leading-relaxed">{complaint.description}</p>
                     </div>
 
-                    {complaint.aiAnalysis && (
+                    {complaint.aiSummary && (
                        <div className="mt-4 pt-4 border-t border-slate-800 space-y-2">
                           <div className="flex items-center gap-2 text-indigo-400">
                              <Sparkles size={16} />
-                             <span className="text-xs font-bold uppercase tracking-wider">AI Insight</span>
+                             <span className="text-xs font-bold uppercase tracking-wider">AI Summary</span>
                           </div>
-                          <div className="bg-slate-950/50 rounded-lg p-3 border border-slate-800/50 space-y-2">
-                             <div className="flex justify-between items-start">
-                                <span className="text-xs font-semibold text-white px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                                  {complaint.aiAnalysis.category}
-                                </span>
-                             </div>
-                             <p className="text-xs text-slate-400 italic">"{complaint.aiAnalysis.summary}"</p>
+                          <div className="bg-slate-950/50 rounded-lg p-3 border border-slate-800/50">
+                             <p className="text-xs text-slate-400 italic">"{complaint.aiSummary}"</p>
                           </div>
                        </div>
                     )}
