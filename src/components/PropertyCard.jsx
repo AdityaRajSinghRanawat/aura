@@ -1,11 +1,22 @@
 import { BedDouble, Bath, Heart, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+import PexelsImages from './PexelsImages';
 
 export default function PropertyCard({ property, onClick }) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const images = property.images?.length > 0 ? property.images : [property.image];
+  const images = property.images?.length > 0 ? property.images : (property.image ? [property.image] : []);
+
+  // Debug logging
+  if (property.id === 1) {
+    console.log('PropertyCard[1]:', { 
+      propertyImages: property.images, 
+      propertyImage: property.image, 
+      resolvedImages: images,
+      showPexels: images.length === 0 
+    });
+  }
 
   const handlePrevImage = (e) => {
     e.stopPropagation();
@@ -29,49 +40,58 @@ export default function PropertyCard({ property, onClick }) {
     >
       {/* Image Section */}
       <div className="relative h-48 shrink-0 overflow-hidden bg-slate-950">
-        <img
-          src={images[currentImageIndex]}
-          alt={property.name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
-
-        {/* Favorite Button */}
-        <button
-          onClick={toggleFavorite}
-          className="absolute top-3 right-3 p-2 bg-black/40 hover:bg-black/60 backdrop-blur-sm rounded-full text-white transition-all z-10"
-        >
-          <Heart
-            size={18}
-            className={isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}
-          />
-        </button>
-
-        {/* Image Navigation */}
-        {images.length > 1 && (
+        {images && images.length > 0 ? (
           <>
-            <button
-              onClick={handlePrevImage}
-              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/40 hover:bg-black/60 backdrop-blur-sm text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              onClick={handleNextImage}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/40 hover:bg-black/60 backdrop-blur-sm text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </>
-        )}
+            <img
+              src={images[currentImageIndex]}
+              alt={property.name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
 
-        {/* Price Badge */}
-        <div className="absolute bottom-3 left-3 z-10">
-          <div className="text-white drop-shadow-lg">
-            <span className="text-lg font-bold">₹{(property.price / 1000).toFixed(0)}k</span>
-            <span className="text-xs text-slate-200 ml-1">/mo</span>
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
+
+            {/* Favorite Button */}
+            <button
+              onClick={toggleFavorite}
+              className="absolute top-3 right-3 p-2 bg-black/40 hover:bg-black/60 backdrop-blur-sm rounded-full text-white transition-all z-10"
+            >
+              <Heart
+                size={18}
+                className={isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}
+              />
+            </button>
+
+            {/* Image Navigation */}
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={handlePrevImage}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/40 hover:bg-black/60 backdrop-blur-sm text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <button
+                  onClick={handleNextImage}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/40 hover:bg-black/60 backdrop-blur-sm text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </>
+            )}
+
+            {/* Price Badge */}
+            <div className="absolute bottom-3 left-3 z-10">
+              <div className="text-white drop-shadow-lg">
+                <span className="text-lg font-bold">₹{(property.price / 1000).toFixed(0)}k</span>
+                <span className="text-xs text-slate-200 ml-1">/mo</span>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="w-full h-full">
+            <PexelsImages query={`${property.name || 'house'} ${property.location || ''}`.trim()} perPage={4} />
           </div>
-        </div>
+        )}
       </div>
 
       {/* Content Section */}

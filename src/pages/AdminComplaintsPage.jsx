@@ -133,6 +133,17 @@ export default function AdminComplaintsPage() {
 
   const viewingComplaint = complaints.find(c => c.id === viewingId);
 
+  // Default contacts mapping when AI doesn't provide explicit contact info
+  const defaultContacts = {
+    Plumbing: 'Emergency Plumbing: +91-98765-11111',
+    Electrical: 'Electrical Support: +91-98765-22222',
+    Disturbance: 'Building Security: +91-98765-33333',
+    Connectivity: 'ISP Support: +91-98765-44444',
+    Hygiene: 'Housekeeping: +91-98765-55555',
+    Security: 'Head of Security: +91-98765-99999',
+    'Hygiene / Pest Control': 'Housekeeping: +91-98765-55555',
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'solved':
@@ -282,14 +293,24 @@ export default function AdminComplaintsPage() {
 
                 <p className="text-slate-300 mb-3">{complaint.description.substring(0, 100)}...</p>
 
-                {complaint.aiSummary && (
+                {complaint.aiAnalysis ? (
+                  <div className="bg-slate-900/50 rounded-lg p-3 mb-3 border border-slate-700">
+                    <div className="flex items-start gap-2">
+                      <Sparkles size={16} className="text-purple-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-slate-300 text-sm font-semibold">{complaint.aiAnalysis.summary}</p>
+                        <p className="text-slate-400 text-xs mt-1">Category: <span className="text-indigo-300">{complaint.aiAnalysis.category}</span> • Priority: <span className="text-amber-300">{complaint.aiAnalysis.priority}</span></p>
+                      </div>
+                    </div>
+                  </div>
+                ) : complaint.aiSummary ? (
                   <div className="bg-slate-900/50 rounded-lg p-3 mb-3 border border-slate-700">
                     <div className="flex items-start gap-2">
                       <Sparkles size={16} className="text-purple-400 mt-0.5 flex-shrink-0" />
                       <p className="text-slate-300 text-sm">{complaint.aiSummary}</p>
                     </div>
                   </div>
-                )}
+                ) : null}
 
                 <div className="flex items-center justify-between pt-3 border-t border-slate-700">
                   <select
@@ -501,6 +522,83 @@ export default function AdminComplaintsPage() {
                     <h3 className="text-slate-300 text-sm font-semibold">AI Summary</h3>
                   </div>
                   <p className="text-slate-300">{viewingComplaint.aiSummary}</p>
+                </div>
+              )}
+
+              {/* Full AI Analysis for Admins */}
+              {viewingComplaint.aiAnalysis && (
+                <div className="border-t border-slate-700 pt-4 space-y-4">
+                  <h3 className="text-slate-300 text-sm font-semibold mb-2">AI Analysis (Detailed)</h3>
+
+                  <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
+                    <p className="text-xs font-semibold text-slate-300">Summary</p>
+                    <p className="text-sm text-slate-300">{viewingComplaint.aiAnalysis.summary}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
+                      <p className="text-xs font-semibold text-slate-300">Category</p>
+                      <p className="text-sm text-indigo-300">{viewingComplaint.aiAnalysis.category}</p>
+                    </div>
+                    <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
+                      <p className="text-xs font-semibold text-slate-300">Priority</p>
+                      <p className="text-sm text-amber-300">{viewingComplaint.aiAnalysis.priority}</p>
+                    </div>
+                  </div>
+
+                  {viewingComplaint.aiAnalysis.keyActionSteps && viewingComplaint.aiAnalysis.keyActionSteps.length > 0 && (
+                    <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
+                      <p className="text-xs font-semibold text-slate-300 mb-2">Key Action Steps</p>
+                      <ol className="list-decimal list-inside text-slate-400 text-sm space-y-1">
+                        {viewingComplaint.aiAnalysis.keyActionSteps.map((s, i) => (
+                          <li key={i}>{s}</li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+
+                  {viewingComplaint.aiAnalysis.problemSolutionApproach && (
+                    <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
+                      <p className="text-xs font-semibold text-slate-300 mb-2">Problem - Solution Approach</p>
+                      {viewingComplaint.aiAnalysis.problemSolutionApproach.problemAnalysis && (
+                        <div>
+                          <p className="text-xs font-semibold text-indigo-300">Problem Analysis</p>
+                          <p className="text-sm text-slate-400">{viewingComplaint.aiAnalysis.problemSolutionApproach.problemAnalysis}</p>
+                        </div>
+                      )}
+                      {viewingComplaint.aiAnalysis.problemSolutionApproach.solutionStrategy && (
+                        <div className="mt-2">
+                          <p className="text-xs font-semibold text-indigo-300">Solution Strategy</p>
+                          <p className="text-sm text-slate-400">{viewingComplaint.aiAnalysis.problemSolutionApproach.solutionStrategy}</p>
+                        </div>
+                      )}
+                      {viewingComplaint.aiAnalysis.problemSolutionApproach.timeline && (
+                        <div className="mt-2">
+                          <p className="text-xs font-semibold text-indigo-300">Timeline / ETA</p>
+                          <p className="text-sm text-slate-400">{viewingComplaint.aiAnalysis.problemSolutionApproach.timeline}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Contact / Department / Cost */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
+                      <p className="text-xs font-semibold text-slate-300 mb-1">Suggested Department</p>
+                      <p className="text-sm text-slate-400">{viewingComplaint.aiAnalysis.suggestedDepartment}</p>
+                    </div>
+                    <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
+                      <p className="text-xs font-semibold text-slate-300 mb-1">Est. Cost</p>
+                      <p className="text-sm text-slate-400">{viewingComplaint.aiAnalysis.estimatedResolutionCost}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
+                    <p className="text-xs font-semibold text-slate-300 mb-1">Contact Info</p>
+                    <p className="text-sm text-slate-400">
+                      {viewingComplaint.aiAnalysis.contact || defaultContacts[viewingComplaint.aiAnalysis.category] || viewingComplaint.aiAnalysis.suggestedDepartment}
+                    </p>
+                  </div>
                 </div>
               )}
 

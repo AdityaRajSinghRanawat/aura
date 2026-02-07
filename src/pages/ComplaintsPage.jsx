@@ -69,6 +69,14 @@ export default function ComplaintsPage() {
         description: formData.description,
         propertyId: formData.propertyId,
         propertyName: myProperties.find(p => p.id == formData.propertyId)?.name,
+        aiAnalysis: analysis || {
+          summary: 'Complaint received and noted.',
+          keyActionSteps: [],
+          problemSolutionApproach: {},
+          category: 'General Complaint',
+          priority: 'Medium',
+          suggestedDepartment: 'Management'
+        },
         aiSummary: analysis?.summary || 'Complaint received and noted.',
         status: 'under work',
         createdAt: new Date().toISOString(),
@@ -230,16 +238,37 @@ export default function ComplaintsPage() {
                       <p className="text-sm text-slate-300 leading-relaxed">{complaint.description}</p>
                     </div>
 
-                    {complaint.aiSummary && (
-                       <div className="mt-4 pt-4 border-t border-slate-800 space-y-2">
-                          <div className="flex items-center gap-2 text-indigo-400">
-                             <Sparkles size={16} />
-                             <span className="text-xs font-bold uppercase tracking-wider">AI Summary</span>
+                    {complaint.aiAnalysis && (
+                      <div className="mt-4 pt-4 border-t border-slate-800 space-y-3">
+                        <div className="flex items-center gap-2 text-indigo-400 mb-2">
+                          <Sparkles size={16} />
+                          <span className="text-xs font-bold uppercase tracking-wider">AI Summary</span>
+                        </div>
+
+                        <div className="bg-slate-950/50 rounded-lg p-3 border border-slate-800/50">
+                          <p className="text-xs font-semibold text-slate-300 mb-1">Summary</p>
+                          <p className="text-xs text-slate-400">{complaint.aiAnalysis.summary}</p>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3 items-start">
+                          <div className="bg-slate-950/50 rounded-lg p-3 border border-slate-800/50">
+                            <p className="text-xs font-semibold text-slate-300 mb-1">Category</p>
+                            <p className="text-xs text-indigo-400">{complaint.aiAnalysis.category}</p>
                           </div>
                           <div className="bg-slate-950/50 rounded-lg p-3 border border-slate-800/50">
-                             <p className="text-xs text-slate-400 italic">"{complaint.aiSummary}"</p>
+                            <p className="text-xs font-semibold text-slate-300 mb-1">ETA</p>
+                            <p className="text-xs text-slate-400">{complaint.aiAnalysis.problemSolutionApproach?.timeline || 'TBD'}</p>
                           </div>
-                       </div>
+                          <div className="bg-slate-950/50 rounded-lg p-3 border border-slate-800/50">
+                            <p className="text-xs font-semibold text-slate-300 mb-1">Immediate Steps</p>
+                            <ul className="text-xs text-slate-400 list-disc list-inside">
+                              {complaint.aiAnalysis.keyActionSteps?.slice(0,2).map((s, i) => (
+                                <li key={i}>{s}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 ))}

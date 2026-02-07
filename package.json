@@ -12,7 +12,9 @@
   "dependencies": {
     "@langchain/core": "^1.1.19",
     "@langchain/google-genai": "^2.1.15",
+    "@langchain/openai": "^1.2.5",
     "@tailwindcss/vite": "^4.1.18",
+    "dotenv": "^17.2.4",
     "langchain": "^1.2.18",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
